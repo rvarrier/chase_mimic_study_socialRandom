@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Loading..</title>
+
+    <script src="jspsych/jspsych.js"></script>
+    <script src='https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js'></script>
+    <script src="jspsych/plugin-html-keyboard-response.js" type="text/javascript"></script>
+    <script src="jspsych/plugin-call-function.js"></script>
+    <link rel="stylesheet" href="jspsych/jspsych.css" />
+    <!--<link href="jspsych/jspsych.css" rel="stylesheet" type="text/css" />-->
+</head>
+
+<body>
+    <script>
+        var jsPsych = initJsPsych({
+            on_finish: function() {
+                // add completed field to every trial in the data
+                jsPsych.data.addProperties({
+                    completed: true
+                });
+                // when data is displayed, you should see a subject and completed field for each trial
+                //jsPsych.data.displayData();
+            }
+        });
+        //{
+        //adapt_to_file_protocol: false,
+        //override_safe_mode: true,
+        //timeline: timeline_temp,
+        //experiment_structure: procedure_list,
+        //});
+
+        var subject_id = jsPsych.data.getURLVariable('PROLIFIC_PID');
+        var study_id = jsPsych.data.getURLVariable('STUDY_ID');
+        var session_id = jsPsych.data.getURLVariable('SESSION_ID');
+        //console.log('subject_id:', subject_id, 'study_id:', study_id, 'session_id', session_id)
+        console.log('pre', jsPsych.data.get())
+
+        /*jsPsych.data.addProperties({
+            subject_id: subject_id,
+            study_id: study_id,
+            session_id: session_id
+        });*/
+
+        timeline_temp = []
+
+        var welcome_page = { // This page needs to be here for data to be saved on the next page.
+            type: jsPsychHtmlKeyboardResponse, //"html-keyboard-response"
+            stimulus: `Welcome! Press any key to proceed.`,
+            data: {
+                subject_id: jsPsych.data.getURLVariable('PROLIFIC_PID'),
+                study_id: jsPsych.data.getURLVariable('STUDY_ID'),
+                session_id: jsPsych.data.getURLVariable('SESSION_ID')
+            }
+        };
+
+        var loading_page = {
+            type: jsPsychHtmlKeyboardResponse, //"html-keyboard-response"
+            stimulus: `<p><a href="https://rcweb.dartmouth.edu/~f0053cz/chase_mimic_study_v2/increment_participant_id.php">Click here to start the experiment</a>.</p>`,
+            data: {
+                subject_id1: jsPsych.data.getURLVariable('PROLIFIC_PID'),
+                study_id1: jsPsych.data.getURLVariable('STUDY_ID'),
+                session_id1: jsPsych.data.getURLVariable('SESSION_ID')
+            },
+            on_load: function() {
+                //console.log('on load')
+                console.log('post', jsPsych.data.get())
+                const d = new Date();
+                let time = d.getTime();
+                jsPsych.data.addProperties({
+                    time_done: time
+                })
+                saveData("_data", jsPsych.data.get().csv()); // saving data as the second page loads (this doesn't work if we define the variables here or add the variables
+                // before or after the timeline)
+            }
+        };
+        timeline_temp.push(welcome_page, loading_page);
+        jsPsych.run(timeline_temp)
+        jsPsych.data.getInteractionData()
+
+        function saveData(name, data) {
+            console.log('saving..') // call the saveData function on loading the second page
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', 'write_prolific_id.php'); // 'write_data.php' is the path to the php file described above.
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify({
+                filedata: data
+            }));
+        }
+    </script>
+</body>
+
+</html>
